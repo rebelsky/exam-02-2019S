@@ -1,0 +1,177 @@
+package utils;
+
+import java.io.PrintWriter;
+
+import java.util.Random;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * A simple set of tests for SimpleMaps.  Based on experiments that
+ * I wrote for hash tables and tests I wrote for skip lists (and,
+ * perhaps, some other things I've done).
+ *
+ * @author Samuel A. Rebelsky
+ */
+public class SimpleMapTests {
+
+  // +--------------------+------------------------------------------
+  // | Some useful arrays |
+  // +--------------------+
+
+  /**
+   * Names of some numbers.
+   */
+  static final String numbers[] =
+      {"zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+          "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+          "sixteen", "seventeen", "eighteen", "nineteen"};
+
+  /**
+   * Names of more numbers.
+   */
+  static final String tens[] = {"", "", "twenty", "thirty", "forty", "fifty",
+      "sixty", "seventy", "eighty", "ninety"};
+
+  /**
+   * A word list stolen from some tests that SamR wrote in the distant past.
+   */
+  static final String[] words = {"aardvark", "anteater", "antelope", "bear", "bison",
+      "buffalo", "chinchilla", "cat", "dingo", "elephant", "eel",
+      "flying squirrel", "fox", "goat", "gnu", "goose", "hippo", "horse",
+      "iguana", "jackalope", "kestrel", "llama", "moose", "mongoose", "nilgai",
+      "orangutan", "opossum", "red fox", "snake", "tarantula", "tiger",
+      "vicuna", "vulture", "wombat", "yak", "zebra", "zorilla"};
+
+  // +-------+-------------------------------------------------------
+  // | Tests |
+  // +-------+
+
+  /**
+   * Explore what happens when we use set with a repeated key.
+   */
+  @Test
+  void repeatedSetExpt() {
+    htab.set("alpha", "alpha");
+    htab.dump(pen);
+    htab.set("beta", "beta");
+    htab.dump(pen);
+    htab.set("bravo", "bravo");
+    htab.dump(pen);
+    htab.set("beta", "bingo");
+    htab.dump(pen);
+    htab.reportBasicCalls(false);
+    checkGet(pen, htab, "beta");
+    pen.println();
+  } // repeatedSetExpt(PrintWriter, HashTable)
+
+  /**
+   * Explore what happens when we use two keys that map to the same location.
+   */
+  public static void matchingKeysExpt(PrintWriter pen,
+      HashTable<String, String> htab) {
+    pen.println("Setting anteater");
+    htab.set("anteater", "anteater");
+    checkGet(pen, htab, "anteater");
+    checkGet(pen, htab, "buffalo");
+    htab.dump(pen);
+    pen.println();
+  } // matchingKeysExpt(PrintWriter, HashTable)
+
+  /**
+   * Explore what happens when we use two keys that map to the same location.
+   */
+  public static void matchingSetExpt(PrintWriter pen,
+      HashTable<String, String> htab) {
+    pen.println("Setting anteater");
+    htab.set("anteater", "anteater");
+    htab.set("buffalo", "buffalo");
+    checkGet(pen, htab, "anteater");
+    checkGet(pen, htab, "buffalo");
+    htab.dump(pen);
+    pen.println();
+  } // matchingSetExpt(PrintWriter, HashTable)
+
+  /**
+   * Explore what happens when we use set with a wide variety of key/value
+   * pairs.
+   */
+  public static void multipleSetExpt(PrintWriter pen,
+      HashTable<String, String> htab) {
+    int numwords = words.length;
+    for (int i = 0; i < numwords; i++) {
+      // htab.dump(pen);
+      htab.set(words[i], words[i]);
+      for (int j = 0; j <= i; j++) {
+        try {
+          String str = htab.get(words[j]);
+          if (!str.equals(words[j])) {
+            pen.println("After setting " + words[i] + ", " + words[j]
+                + " no longer yields itself.");
+            htab.dump(pen);
+            return;
+          } // if we didn't get the expected value.
+        } catch (Exception e) {
+          pen.println("After setting " + words[i] + ", " + words[j]
+              + " is no longer in the table.");
+          htab.dump(pen);
+          return;
+        } // try/catch
+      } // for j
+    } // for i
+    htab.dump(pen);
+    pen.println();
+  } // multipleSetExpt(PrintWriter, HashTable)
+
+  /**
+   * Explore what happens when we remove elements.
+   */
+  public static void multipleRemoveExpt(PrintWriter pen,
+      HashTable<String, String> htab) {
+    // Populate the table
+    htab.clear();
+    multipleSetExpt(pen, htab);
+
+    // Remove words one by one.
+    for (int i = 0; i < words.length; i++) {
+      htab.remove(words[i]);
+      // Make sure that it's removed
+      boolean removed = false;
+      try {
+        htab.get(words[i]);
+      } catch (Exception e) {
+        removed = true;
+      } // try/catch
+      if (!removed) {
+        pen.println("Failed to remove " + words[i]);
+        htab.dump(pen);
+        return;
+      } // if
+
+      // Make sure that the remaining elements are still there.
+      for (int j = i + 1; j < words.length; j++) {
+        try {
+          String str = htab.get(words[j]);
+          if (!str.equals(words[j])) {
+            pen.println("After removing " + words[i] + ", " + words[j]
+                + " now maps to " + str);
+            htab.dump(pen);
+            return;
+          } // if
+        } catch (Exception e) {
+          pen.println("After removing " + words[i] + ", " + words[j]
+              + " is no longer present");
+          htab.dump(pen);
+          return;
+        } // try catch
+      } // for j
+    } // for i
+  } // multipleRemoveExpt(PrintWriter, HashTable)
+
